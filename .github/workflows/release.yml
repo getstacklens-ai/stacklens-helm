@@ -26,6 +26,11 @@ jobs:
         with:
           version: v3.16.3
 
+      - name: Add chart repositories
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+
       - name: Verify tag matches Chart.yaml version
         run: |
           set -euo pipefail
