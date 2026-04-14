@@ -1,0 +1,126 @@
+# Default namespace is the Helm release namespace unless global.namespace is set.
+nameOverride: ""
+fullnameOverride: ""
+
+# StackLens app images only. Do not use global.imageRegistry here — Bitnami subcharts read
+# global.imageRegistry and would treat GHCR as the registry for Postgres/Redis images.
+images:
+  registry: ghcr.io/getstacklens-ai
+  tag: latest
+  pullPolicy: IfNotPresent
+
+global:
+  namespace: ""
+  postgresql:
+    fullnameOverride: ""
+
+imagePullSecrets: []
+
+secrets:
+  # When existingSecret is non-empty, no Secret is created; workloads use that name.
+  existingSecret: ""
+  create: true
+  # Used when postgresql.enabled / redis.enabled are false (external data stores).
+  identityDb: "Host=postgres;Database=stacklens_identity;Username=stacklens;Password=changeme"
+  flowopsDb: "Host=postgres;Database=stacklens_flowops;Username=stacklens;Password=changeme"
+  redis: "redis:6379"
+  jwtSecret: "change-this-to-a-random-string-at-least-32-chars-long"
+
+identity:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    ASPNETCORE_ENVIRONMENT: Production
+
+flowops:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    ASPNETCORE_ENVIRONMENT: Production
+
+gateway:
+  enabled: true
+  replicas: 2
+  resources:
+    requests:
+      cpu: 150m
+      memory: 128Mi
+    limits:
+      cpu: 750m
+      memory: 512Mi
+  env:
+    ASPNETCORE_ENVIRONMENT: Production
+  # Optional full URLs; empty strings resolve to in-cluster Services for this chart only.
+  upstreams:
+    identity: ""
+    flowops: ""
+
+ui:
+  enabled: true
+  replicas: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: stacklens.example.com
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+  tls: []
+
+# Bitnami PostgreSQL (https://github.com/bitnami/charts/tree/main/bitnami/postgresql)
+# When enabled, subchart installs Postgres; set postgresql.auth.postgresPassword (required).
+# Connection strings in the StackLens Secret are generated automatically.
+postgresql:
+  enabled: false
+  primaryHostOverride: ""
+  connectionPort: 5432
+  architecture: standalone
+  auth:
+    enablePostgresUser: true
+    postgresPassword: ""
+    username: ""
+    password: ""
+    database: ""
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+# Bitnami Redis (https://github.com/bitnami/charts/tree/main/bitnami/redis)
+# When enabled, subchart installs Redis. For trial installs auth.enabled=false is simplest.
+redis:
+  enabled: false
+  masterHostOverride: ""
+  connectionPort: 6379
+  architecture: standalone
+  auth:
+    enabled: false
+    sentinel: false
+    password: ""
+  master:
+    persistence:
+      enabled: true
+      size: 1Gi

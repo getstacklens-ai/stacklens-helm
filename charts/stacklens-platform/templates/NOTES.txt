@@ -1,0 +1,24 @@
+StackLens platform chart deployed.
+
+Release: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+{{- if .Values.ingress.enabled }}
+
+URL: http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.host }}/
+{{- else }}
+
+UI (port-forward): kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "stacklens-platform.ui.name" . }} 8080:80
+Then open http://127.0.0.1:8080
+{{- end }}
+
+Credentials Secret name: {{ include "stacklens-platform.secretName" . }}
+Required keys: ConnectionStrings__IdentityDb, ConnectionStrings__FlowOpsDb, ConnectionStrings__Redis, Jwt__Secret
+{{- if .Values.postgresql.enabled }}
+
+Bundled PostgreSQL: set postgresql.auth.postgresPassword; connection strings target {{ include "stacklens-platform.postgresql.primaryHost" . }}:{{ .Values.postgresql.connectionPort }}.
+{{- end }}
+{{- if .Values.redis.enabled }}
+
+Bundled Redis: connection string targets {{ include "stacklens-platform.redis.masterHost" . }}:{{ .Values.redis.connectionPort }} (auth per redis.auth.*).
+{{- end }}

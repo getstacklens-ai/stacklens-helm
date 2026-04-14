@@ -1,0 +1,60 @@
+{{- if .Values.identity.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "stacklens-platform.identity.name" . }}
+  labels:
+    {{- include "stacklens-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: identity
+  {{- if .Values.global.namespace }}
+  namespace: {{ .Values.global.namespace }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.identity.replicas }}
+  selector:
+    matchLabels:
+      {{- include "stacklens-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: identity
+  template:
+    metadata:
+      labels:
+        {{- include "stacklens-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: identity
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: identity
+          image: {{ printf "%s/stacklens-identity:%s" .Values.images.registry .Values.images.tag | quote }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ .Values.identity.env.ASPNETCORE_ENVIRONMENT | quote }}
+            - name: ConnectionStrings__IdentityDb
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "stacklens-platform.secretName" . }}
+                  key: ConnectionStrings__IdentityDb
+          resources:
+            {{- toYaml .Values.identity.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+{{- end }}

@@ -1,0 +1,19 @@
+{{- if .Values.ui.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "stacklens-platform.ui.name" . }}
+  labels:
+    {{- include "stacklens-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+  {{- if .Values.global.namespace }}
+  namespace: {{ .Values.global.namespace }}
+  {{- end }}
+spec:
+  selector:
+    {{- include "stacklens-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+  ports:
+    - port: 80
+      targetPort: 80
+{{- end }}

@@ -1,0 +1,15 @@
+apiVersion: v2
+name: stacklens-platform
+description: Helm chart for StackLens platform (Identity, FlowOps, Gateway, UI)
+type: application
+version: 0.2.0
+appVersion: "0.2.0"
+dependencies:
+  - name: postgresql
+    version: "18.5.14"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: "25.3.9"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled

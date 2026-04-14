@@ -1,0 +1,19 @@
+{{- $id := include "stacklens-platform.identity.name" . -}}
+{{- $fo := include "stacklens-platform.flowops.name" . -}}
+{{- $identityUrl := default (printf "http://%s" $id) .Values.gateway.upstreams.identity -}}
+{{- $flowopsUrl := default (printf "http://%s" $fo) .Values.gateway.upstreams.flowops -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "stacklens-platform.fullname" . }}-gateway-env
+  labels:
+    {{- include "stacklens-platform.labels" . | nindent 4 }}
+  {{- if .Values.global.namespace }}
+  namespace: {{ .Values.global.namespace }}
+  {{- end }}
+data:
+  ASPNETCORE_ENVIRONMENT: {{ .Values.gateway.env.ASPNETCORE_ENVIRONMENT | quote }}
+  ASPNETCORE_URLS: "http://+:8080"
+  Services__Identity: {{ $identityUrl | quote }}
+  ReverseProxy__Clusters__identity__Destinations__default__Address: {{ $identityUrl | quote }}
+  ReverseProxy__Clusters__flowops__Destinations__default__Address: {{ $flowopsUrl | quote }}
