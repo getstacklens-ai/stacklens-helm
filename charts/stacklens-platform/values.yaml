@@ -6,7 +6,8 @@ fullnameOverride: ""
 # global.imageRegistry and would treat GHCR as the registry for Postgres/Redis images.
 images:
   registry: ghcr.io/getstacklens-ai
-  tag: latest
+  # If empty, the chart will default this to Chart.appVersion (keeps images+chart in sync).
+  tag: ""
   pullPolicy: IfNotPresent
 
 global:

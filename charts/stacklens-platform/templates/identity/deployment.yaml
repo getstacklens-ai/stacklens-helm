@@ -27,7 +27,7 @@ spec:
       {{- end }}
       containers:
         - name: identity
-          image: {{ printf "%s/stacklens-identity:%s" .Values.images.registry .Values.images.tag | quote }}
+          image: {{ printf "%s/stacklens-identity:%s" .Values.images.registry (include "stacklens-platform.images.tag" .) | quote }}
           imagePullPolicy: {{ .Values.images.pullPolicy }}
           ports:
             - containerPort: 8080

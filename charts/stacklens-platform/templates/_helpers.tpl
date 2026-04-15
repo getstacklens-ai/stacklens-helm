@@ -75,3 +75,8 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s-redis-master" .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end -}}
+
+{{/* StackLens application image tag (defaults to chart appVersion). */}}
+{{- define "stacklens-platform.images.tag" -}}
+{{- default .Chart.AppVersion .Values.images.tag -}}
+{{- end -}}
