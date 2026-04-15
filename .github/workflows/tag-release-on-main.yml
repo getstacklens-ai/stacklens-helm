@@ -1,0 +1,61 @@
+name: Tag chart release after merge
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "charts/stacklens-platform/Chart.yaml"
+
+permissions:
+  contents: write
+
+env:
+  CHART_PATH: charts/stacklens-platform
+
+jobs:
+  tag:
+    name: Create tag vX.Y.Z from Chart.yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from Chart.yaml
+        id: ver
+        run: |
+          set -euo pipefail
+          ver=$(grep -E '^version:' "${{ env.CHART_PATH }}/Chart.yaml" | awk '{print $2}' | tr -d '"' | tr -d "'")
+          if ! printf '%s' "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Chart.yaml version is not SemVer X.Y.Z (got $ver)"
+            exit 1
+          fi
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+
+      - name: Only tag release bump commits
+        run: |
+          set -euo pipefail
+          msg="$(git log -1 --pretty=%s)"
+          case "$msg" in
+            "chore(release): chart v${{ steps.ver.outputs.version }}") ;;
+            *)
+              echo "Skipping: commit subject is not the expected release bump message."
+              echo "Subject: $msg"
+              exit 0
+              ;;
+          esac
+
+      - name: Tag if missing
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.ver.outputs.version }}"
+          if git show-ref --tags --verify --quiet "refs/tags/${tag}"; then
+            echo "Tag ${tag} already exists; nothing to do."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "stacklens-platform chart $tag"
+          git push origin "$tag"
+
