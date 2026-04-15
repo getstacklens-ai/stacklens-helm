@@ -31,6 +31,13 @@ spec:
           imagePullPolicy: {{ .Values.images.pullPolicy }}
           ports:
             - containerPort: 80
+          env:
+            - name: GATEWAY_HOST
+              value: {{ include "stacklens-platform.gateway.name" . }}
+          volumeMounts:
+            - name: nginx-templates
+              mountPath: /etc/nginx/templates/default.conf.template
+              subPath: default.conf.template
           resources:
             {{- toYaml .Values.ui.resources | nindent 12 }}
           livenessProbe:
@@ -47,4 +54,8 @@ spec:
             initialDelaySeconds: 3
             periodSeconds: 10
             failureThreshold: 3
+      volumes:
+        - name: nginx-templates
+          configMap:
+            name: {{ include "stacklens-platform.ui.name" . }}-nginx
 {{- end }}
