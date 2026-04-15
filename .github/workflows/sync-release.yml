@@ -1,0 +1,91 @@
+name: Sync release from stacklens-platform
+
+on:
+  repository_dispatch:
+    types: [stacklens-platform-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "SemVer version X.Y.Z (no leading v)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  CHART_PATH: charts/stacklens-platform
+
+jobs:
+  sync:
+    name: Bump chart + tag release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: ver
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            version="${{ github.event.client_payload.version }}"
+          else
+            version="${{ inputs.version }}"
+          fi
+
+          if [ -z "$version" ] || [ "$version" = "null" ]; then
+            echo "::error::version is required"
+            exit 1
+          fi
+
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\\.[0-9]+\\.[0-9]+$'; then
+            echo "::error::version must be X.Y.Z (got $version)"
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure tag does not already exist
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.ver.outputs.version }}"
+          if git show-ref --tags --verify --quiet "refs/tags/${tag}"; then
+            echo "::error::Tag ${tag} already exists in this repo"
+            exit 1
+          fi
+
+      - name: Install yq
+        env:
+          YQ_VERSION: v4.44.3
+        run: |
+          curl -sSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" -o /tmp/yq
+          sudo install -m755 /tmp/yq /usr/local/bin/yq
+
+      - name: Bump Chart.yaml version/appVersion
+        run: |
+          set -euo pipefail
+          yq -i '.version = "${{ steps.ver.outputs.version }}"' "${{ env.CHART_PATH }}/Chart.yaml"
+          yq -i '.appVersion = "${{ steps.ver.outputs.version }}"' "${{ env.CHART_PATH }}/Chart.yaml"
+
+      - name: Commit bump
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${{ env.CHART_PATH }}/Chart.yaml"
+          git commit -m "chore(release): chart v${{ steps.ver.outputs.version }}"
+
+      - name: Push bump commit to main
+        run: |
+          set -euo pipefail
+          git push origin HEAD:main
+
+      - name: Tag and push
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.ver.outputs.version }}"
+          git tag -a "$tag" -m "stacklens-platform chart $tag"
+          git push origin "$tag"
+
