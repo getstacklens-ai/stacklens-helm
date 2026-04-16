@@ -7,7 +7,7 @@ Public Helm charts for installing StackLens components.
 ### Semver releases (`v*` tags)
 
 1. Bump `version` / `appVersion` in `charts/stacklens-platform/Chart.yaml`.
-2. Commit and push a **matching** SemVer tag (`v` + chart version), for example `v0.2.0` for chart `0.2.0`.
+2. Commit and push a **matching** SemVer tag (`v` + chart version), for example `v0.2.10` for chart `0.2.10`.
 3. [Release Helm chart](.github/workflows/release.yml) packages the chart (including Bitnami dependencies) and pushes it to **GHCR OCI** at `oci://ghcr.io/<org>/helm`.
 
 The tag must equal the chart `version` (without the leading `v`). The workflow uses **Packages: write** on `GITHUB_TOKEN`.
@@ -26,11 +26,11 @@ Use **semver releases** for anything you treat as stable; snapshots are for cont
 
 ## Install from GHCR (OCI)
 
-**Release** chart (example `0.2.0`):
+**Release** chart (example `0.2.10`):
 
 ```bash
 helm install stacklens oci://ghcr.io/getstacklens-ai/helm/stacklens-platform \
-  --version 0.2.0 \
+  --version 0.2.10 \
   --namespace stacklens --create-namespace \
   --set ingress.host=app.example.com
 ```
