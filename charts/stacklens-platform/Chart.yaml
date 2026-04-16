@@ -2,8 +2,8 @@ apiVersion: v2
 name: stacklens-platform
 description: Helm chart for StackLens platform (Identity, FlowOps, Gateway, UI)
 type: application
-version: 0.2.9
-appVersion: "0.2.9"
+version: 0.2.10
+appVersion: "0.2.10"
 dependencies:
   - name: postgresql
     version: "18.5.14"
