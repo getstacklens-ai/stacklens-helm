@@ -36,6 +36,11 @@ spec:
               value: "http://+:8080"
             - name: ASPNETCORE_ENVIRONMENT
               value: {{ .Values.identity.env.ASPNETCORE_ENVIRONMENT | quote }}
+            - name: Jwt__Secret
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "stacklens-platform.secretName" . }}
+                  key: Jwt__Secret
             - name: ConnectionStrings__IdentityDb
               valueFrom:
                 secretKeyRef:
