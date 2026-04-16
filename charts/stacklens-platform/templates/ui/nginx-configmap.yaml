@@ -17,11 +17,27 @@ data:
         root /usr/share/nginx/html;
         index index.html;
 
-        # Proxy API to Gateway (no VITE_API_URL needed; /api is same-origin)
-        location /api/ {
-            proxy_pass http://${GATEWAY_HOST}/;
+        # Proxy Gateway (Option B: no /api prefix)
+        # Routes:
+        # - /auth/*, /organizations/*, /internal/* (Identity via Gateway)
+        # - /flowops/*, /stacktrace/*, /governai/* (product APIs via Gateway)
+        location ~ ^/(auth|organizations|internal|flowops|stacktrace|governai)/ {
+            proxy_pass http://${GATEWAY_HOST};
             proxy_http_version 1.1;
             proxy_set_header Host $host;
+            proxy_set_header Authorization $http_authorization;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Backward-compat: old /api/* paths → new paths (temporary)
+        location ^~ /api/ {
+            rewrite ^/api/(.*)$ /$1 break;
+            proxy_pass http://${GATEWAY_HOST};
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header Authorization $http_authorization;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;

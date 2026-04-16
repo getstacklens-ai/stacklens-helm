@@ -11,8 +11,10 @@ on:
         type: string
 
 permissions:
-  contents: write
-  pull-requests: write
+  # Note: GITHUB_TOKEN permissions are read-only in this org/repo. This workflow uses a
+  # dedicated fine-grained PAT stored in secrets.RELEASE_BOT_TOKEN for all write operations.
+  contents: read
+  pull-requests: read
 
 env:
   CHART_PATH: charts/stacklens-platform
@@ -22,9 +24,18 @@ jobs:
     name: Open PR to bump chart
     runs-on: ubuntu-latest
     steps:
+      - name: Require RELEASE_BOT_TOKEN
+        run: |
+          set -euo pipefail
+          if [ -z "${{ secrets.RELEASE_BOT_TOKEN }}" ]; then
+            echo "::error::Missing secret RELEASE_BOT_TOKEN. Create a fine-grained PAT with repo access to stacklens-helm and permissions: Contents (Read/Write), Pull requests (Read/Write)."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.RELEASE_BOT_TOKEN }}
 
       - name: Resolve version
         id: ver
@@ -73,7 +84,7 @@ jobs:
       - name: Create PR for chart bump
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_BOT_TOKEN }}
           branch: release/chart-v${{ steps.ver.outputs.version }}
           delete-branch: true
           title: "chore(release): chart v${{ steps.ver.outputs.version }}"
